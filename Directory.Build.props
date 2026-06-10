@@ -1,0 +1,17 @@
+<Project>
+
+  <!-- Shared metadata for all OclNet projects. Package-specific fields (PackageId,
+       Description) live in each shippable project's .csproj. License is MIT by
+       default — adjust if a different open-source license is chosen for the
+       reference validator. -->
+  <PropertyGroup>
+    <Authors>Hamied Nabizada</Authors>
+    <Company>Helmut Schmidt University</Company>
+    <Product>OclNet</Product>
+    <Version>0.1.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/hsu-aut</PackageProjectUrl>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+</Project>

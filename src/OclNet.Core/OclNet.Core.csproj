@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>OclNet.Core</PackageId>
+    <Description>An embeddable, metamodel-agnostic OCL (Object Constraint Language) engine for .NET: parser, AST, tree-walking interpreter and rule validator.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Types are documented; per-member docs on enums/records are not required for shipping. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.14.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ANTLR generates the C# lexer/parser/visitor at build time into obj/.
+         Visitor on, listener off — the AST builder walks the tree as a visitor. -->
+    <Antlr4 Include="Grammar/Ocl.g4">
+      <Package>OclNet.Core.Grammar</Package>
+      <Visitor>true</Visitor>
+      <Listener>false</Listener>
+    </Antlr4>
+  </ItemGroup>
+
+</Project>
