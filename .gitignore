@@ -2,4 +2,5 @@ bin/
 obj/
 TestResults/
 cov/
+artifacts/
 *.user

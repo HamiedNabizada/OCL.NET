@@ -16,6 +16,11 @@
     <Description>CAEX / AutomationML binding for the OclNet OCL engine (via Aml.Engine), incl. a VDI 3682 / FPD type registry.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
