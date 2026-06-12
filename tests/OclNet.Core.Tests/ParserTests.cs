@@ -137,7 +137,7 @@ public class ParserTests
         ("D5", "context FPD_TechnicalResource inv TechnicalResourceNamed: self.identification.longName->notEmpty() or self.identification.shortName->notEmpty() or self.name->notEmpty()"),
         ("D6", "context FPD_Process inv ProcessNamed: self.name->notEmpty()"),
         ("D7", "context FPD_Object inv LongNameMandatory: self.identification.longName->notEmpty() and self.identification.longName->size() > 0"),
-        ("D8", "context FPD_Object inv VersionRevisionOptional: self.identification.versionNumber->size() <= 1 and self.identification.revisionNumber->size() <= 1"),
+        ("D8", "context FPD_Object inv VersionRevisionPresent: self.identification.versionNumber->size() = 1 and self.identification.revisionNumber->size() = 1"),
         ("E1", "context FPD_Characteristic inv CharacteristicCategoryPresent: self.category->notEmpty()"),
         ("E2", "context FPD_Characteristic inv CharacteristicDescriptivePresent: self.descriptiveElement->notEmpty()"),
         ("E4", "context FPD_Characteristic::RelationalElement inv RelationalElementResolvable: self.references->forAll(ref | self.project.containedElement->exists(e | e.identification.uniqueIdent = ref))"),

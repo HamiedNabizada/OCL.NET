@@ -61,8 +61,8 @@ context FPD_Process inv ProcessNamed:
 context FPD_Object inv LongNameMandatory:
   self.identification.longName->notEmpty() and self.identification.longName->size() > 0
 
-context FPD_Object inv VersionRevisionOptional:
-  self.identification.versionNumber->size() <= 1 and self.identification.revisionNumber->size() <= 1
+context FPD_Object inv VersionRevisionPresent:
+  self.identification.versionNumber->size() = 1 and self.identification.revisionNumber->size() = 1
 
 context FPD_Object inv RefObjResolvable:
   self.refObj->notEmpty() implies self.project.containedElement->exists(e | e.identification.uniqueIdent = self.refObj)
