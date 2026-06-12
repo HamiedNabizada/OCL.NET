@@ -98,6 +98,9 @@ public class ConnectionRuleTests
     [Fact]
     public void Validator_enumerates_Usage_links_and_finds_no_violation()
     {
+        // Guard against a vacuous pass: the Usage link must actually be enumerable.
+        Assert.Single(_mm.InstancesOf("FPD_Usage"));
+
         // FPD_Usage context selects only TR_uses_Step; its PO↔TR typing holds.
         var rule = new OclRuleSpec("VDI3682.UsageEndpoints", ValidationSeverity.Error, "VDI 3682 C4",
             "context FPD_Usage inv UsageEndpointsTyped: " +
@@ -105,5 +108,19 @@ public class ConnectionRuleTests
             "(source.oclIsKindOf(FPD_TechnicalResource) and target.oclIsKindOf(FPD_ProcessOperator))");
 
         Assert.Empty(new OclValidator().Validate(_mm, new[] { rule }));
+    }
+
+    [Fact] // negative case: a rewired link must VIOLATE the typing rules
+    public void Rewired_state_to_state_flow_violates_endpoint_typing()
+    {
+        // Point Input_to_Step's target at Output's FlowIn → the flow runs State→State.
+        var broken = Link("TestProcess", "Input_to_Step");
+        broken.RefPartnerSideB = Link("TestProcess", "Step_to_Output").RefPartnerSideB;
+
+        const string c1 =
+            "(source.oclIsKindOf(FPD_State) and target.oclIsKindOf(FPD_ProcessOperator)) or " +
+            "(source.oclIsKindOf(FPD_ProcessOperator) and target.oclIsKindOf(FPD_State))";
+        Assert.False(EvalLink(c1, broken));                                                              // C1 violated
+        Assert.False(EvalLink("not (source.oclIsKindOf(FPD_State) and target.oclIsKindOf(FPD_State))", broken)); // C2 violated
     }
 }

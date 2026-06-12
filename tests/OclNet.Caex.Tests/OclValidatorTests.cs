@@ -13,11 +13,18 @@ namespace OclNet.Caex.Tests;
 /// </summary>
 public class OclValidatorTests
 {
-    private readonly CaexMetamodel _model = new(LoadTestAml());
+    private readonly CAEXDocument _doc = LoadTestAml();
+    private readonly CaexMetamodel _model;
     private readonly OclValidator _validator = new();
+
+    public OclValidatorTests() => _model = new CaexMetamodel(_doc);
 
     private static CAEXDocument LoadTestAml() =>
         CAEXDocument.LoadFromFile(Path.Combine(AppContext.BaseDirectory, "TestData", "test.aml"));
+
+    private string ProcessId(string name) =>
+        _doc.CAEXFile.InstanceHierarchy.SelectMany(ih => ih.InternalElement)
+            .First(ie => ie.RefBaseSystemUnitPath?.EndsWith("/FPD_Process") == true && ie.Name == name).ID;
 
     private static OclRuleSpec Rule(string id, ValidationSeverity severity, string ocl) => new(id, severity, "VDI 3682", ocl);
 
@@ -42,7 +49,7 @@ public class OclValidatorTests
         var finding = Assert.Single(findings);
         Assert.Equal("VDI3682.StateCardinality", finding.RuleId);
         Assert.Equal(ValidationSeverity.Warning, finding.Severity);
-        Assert.Equal("Step", finding.TargetId);
+        Assert.Equal(ProcessId("Step"), finding.TargetId); // findings carry the AML ID (editor focus jumps)
     }
 
     [Fact]
@@ -75,6 +82,11 @@ public class OclValidatorTests
             new[] { Rule("Unsup", ValidationSeverity.Error, "context FPD_Process inv X: self.containedElement->isUnique(e | e)") });
 
         Assert.NotEmpty(findings);
-        Assert.All(findings, f => Assert.Contains("error", f.Message));
+        // Specifically an interpreter-side failure (the rule parses fine), tied to this rule.
+        Assert.All(findings, f =>
+        {
+            Assert.Equal("Unsup", f.RuleId);
+            Assert.Contains("evaluation error", f.Message);
+        });
     }
 }

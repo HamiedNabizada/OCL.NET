@@ -1,8 +1,12 @@
 -- VDI 3682 Blatt 3 — PURE rule set (Phase 1), executable by OclNet.
--- The 30 structural constraints that map directly to OCL over the FPD model
--- (cardinalities, connection typing, naming, reference resolution, semantics).
--- Geometry (B), schema-resolution (J) and the helper-dependent rules ship
--- separately; see vdi3682-helpers.ocl for the def: library.
+-- The 26 structural constraints that map directly to OCL over the FPD model AND
+-- are executable against the CAEX serialization today (cardinalities, connection
+-- typing, naming, reference resolution, semantics).
+-- Geometry (B) and schema-resolution (J) rules ship separately; see
+-- vdi3682-helpers.ocl for the def: library. The four FPD_Characteristic rules
+-- (E1/E2/E4/E5) live in vdi3682-phase2-rules.ocl until the binding exposes
+-- characteristics as OCL instances — shipping them here would make them
+-- silently-green dead rules.
 
 context FPD_Project inv ProjectMinimumProcess:
   self.process->size() >= 1
@@ -59,18 +63,6 @@ context FPD_Object inv LongNameMandatory:
 
 context FPD_Object inv VersionRevisionOptional:
   self.identification.versionNumber->size() <= 1 and self.identification.revisionNumber->size() <= 1
-
-context FPD_Characteristic inv CharacteristicCategoryPresent:
-  self.category->notEmpty()
-
-context FPD_Characteristic inv CharacteristicDescriptivePresent:
-  self.descriptiveElement->notEmpty()
-
-context FPD_Characteristic::RelationalElement inv RelationalElementResolvable:
-  self.references->forAll(ref | self.project.containedElement->exists(e | e.identification.uniqueIdent = ref))
-
-context FPD_Characteristic::DescriptiveElement inv ValidityLimitsConsistent:
-  self.validityLimits->notEmpty() implies self.validityLimits.lowerLimit <= self.validityLimits.upperLimit
 
 context FPD_Object inv RefObjResolvable:
   self.refObj->notEmpty() implies self.project.containedElement->exists(e | e.identification.uniqueIdent = self.refObj)

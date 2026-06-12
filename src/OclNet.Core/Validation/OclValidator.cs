@@ -1,5 +1,6 @@
 using OclNet.Core.Ast;
 using OclNet.Core.Interpreter;
+using OclNet.Core.Metamodel;
 using OclNet.Core.Parser;
 using OclNet.Core.Values;
 
@@ -61,7 +62,23 @@ public sealed class OclValidator
         }
 
         var constraint = rule.Constraint;
-        foreach (var instance in model.InstancesOf(constraint.ContextType))
+
+        // Materialise eagerly so an unknown context type surfaces as a diagnostic
+        // finding instead of a silent pass (a rule whose context the binding does
+        // not know can never fire — the caller must see that).
+        List<OclValue> instances;
+        try
+        {
+            instances = model.InstancesOf(constraint.ContextType).ToList();
+        }
+        catch (UnknownOclTypeException)
+        {
+            findings.Add(new ValidationFinding(rule.Id, rule.Severity,
+                $"[{rule.Id}] context type '{constraint.ContextType}' is unknown to the model binding — rule not evaluated."));
+            return;
+        }
+
+        foreach (var instance in instances)
         {
             var id = model.IdOf(instance);
             OclValue result;

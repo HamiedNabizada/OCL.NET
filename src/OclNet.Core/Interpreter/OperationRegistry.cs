@@ -20,19 +20,24 @@ public sealed class OperationRegistry
     public bool IsEmpty => _definitions.Count == 0;
 
     /// <summary>
-    /// Find the definition for a call. Prefers an exact context-type match; otherwise
-    /// falls back to any same-name/arity definition (covers receivers whose concrete
-    /// type name differs from the conceptual context, e.g. a CAEX bounds wrapper).
+    /// Find the definition for a call. An exact context-type match wins. A
+    /// non-matching receiver only falls back when the name/arity is unambiguous —
+    /// i.e. exactly ONE definition exists (covers receivers whose concrete type name
+    /// differs from the conceptual context). With several same-named definitions on
+    /// different context types, a mismatching receiver resolves to nothing: silently
+    /// picking "the first one" would defeat type-scoped operations.
     /// </summary>
     public OclOperationDef? Resolve(string name, int arity, string receiverType)
     {
-        OclOperationDef? fallback = null;
+        OclOperationDef? candidate = null;
+        var candidates = 0;
         foreach (var definition in _definitions)
         {
             if (definition.Name != name || definition.Parameters.Count != arity) continue;
             if (definition.ContextType == receiverType) return definition;
-            fallback ??= definition;
+            candidate = definition;
+            candidates++;
         }
-        return fallback;
+        return candidates == 1 ? candidate : null;
     }
 }

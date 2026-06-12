@@ -20,6 +20,14 @@ namespace OclNet.Caex;
 /// (<see cref="CaexElementRef"/>/<see cref="CaexLinkRef"/>) so comparisons key on AML
 /// identity. Scalar attributes resolve to their value (or <see cref="OclValue.Void"/>
 /// when empty/absent); compound attributes resolve to a navigable object.
+///
+/// All domain knowledge (type identity, project/process/bounds conventions) is
+/// supplied by the <see cref="ICaexTypeRegistry"/>; the navigation property names
+/// (<c>containedElement</c>, <c>connections</c>, <c>process</c>, <c>project</c>,
+/// <c>bounds</c>, …) are the binding's OCL-side contract, shared by any domain
+/// catalogue using this binding. Objects the registry cannot type are invisible to
+/// rules — surface them via <see cref="UnclassifiedElements"/> so a validator can
+/// report them instead of silently passing.
 /// </summary>
 public sealed class CaexMetamodel : IOclModel
 {
@@ -44,12 +52,24 @@ public sealed class CaexMetamodel : IOclModel
 
     // ---- type identity (delegates to the registry on the unwrapped object) ---------
 
-    public bool IsKindOf(object element, string typeName) => Unwrap(element) is { } o && _types.IsKindOf(o, typeName);
-    public bool IsTypeOf(object element, string typeName) => Unwrap(element) is { } o && _types.IsTypeOf(o, typeName);
+    public bool IsKindOf(object element, string typeName) => element switch
+    {
+        CaexProjectRef => typeName == _types.ProjectTypeName,
+        CaexBoundsRef => typeName == _types.BoundsTypeName,
+        _ => Unwrap(element) is { } o && _types.IsKindOf(o, typeName),
+    };
+
+    public bool IsTypeOf(object element, string typeName) => element switch
+    {
+        CaexProjectRef => typeName == _types.ProjectTypeName,
+        CaexBoundsRef => typeName == _types.BoundsTypeName,
+        _ => Unwrap(element) is { } o && _types.IsTypeOf(o, typeName),
+    };
 
     public string TypeOf(object element) => element switch
     {
-        CaexBoundsRef => "Bounds",
+        CaexProjectRef => _types.ProjectTypeName,
+        CaexBoundsRef => _types.BoundsTypeName,
         AttributeType a => a.Name ?? "",
         _ => Unwrap(element) is { } o ? _types.TypeOf(o) : "",
     };
@@ -88,12 +108,10 @@ public sealed class CaexMetamodel : IOclModel
         _ => OclValue.Void,
     };
 
-    /// <summary>The element's bounds (its <c>ViewInformation</c> / FPD_Bounds attribute), wrapped for flat access.</summary>
-    private static OclValue BoundsOf(InternalElementType element)
+    /// <summary>The element's bounds (its diagram-interchange attribute, located by the registry), wrapped for flat access.</summary>
+    private OclValue BoundsOf(InternalElementType element)
     {
-        var view = element.Attribute.FirstOrDefault(a =>
-            a.RefAttributeType?.EndsWith("/FPD_Bounds") == true ||
-            string.Equals(a.Name, "ViewInformation", StringComparison.OrdinalIgnoreCase));
+        var view = element.Attribute.FirstOrDefault(_types.IsBoundsAttribute);
         return view is null ? OclValue.Void : OclValue.Obj(new CaexBoundsRef(view));
     }
 
@@ -101,7 +119,7 @@ public sealed class CaexMetamodel : IOclModel
     {
         // project-wide aggregation across all hierarchies
         "containedElement" => OclValue.Collection(AllElements(document).Select(Wrap).ToList()),
-        "process" => OclValue.Collection(AllElements(document).Where(ie => _types.IsKindOf(ie, "FPD_Process")).Select(Wrap).ToList()),
+        "process" => OclValue.Collection(AllElements(document).Where(ie => _types.IsKindOf(ie, _types.ProcessTypeName)).Select(Wrap).ToList()),
         _ => OclValue.Void,
     };
 
@@ -120,13 +138,13 @@ public sealed class CaexMetamodel : IOclModel
         return process is null ? OclValue.Void : Wrap(process);
     }
 
-    /// <summary>Climb the parent chain to the nearest enclosing FPD_Process IE.</summary>
+    /// <summary>Climb the parent chain to the nearest enclosing process-typed IE (per the registry's <see cref="ICaexTypeRegistry.ProcessTypeName"/>).</summary>
     private InternalElementType? NearestProcess(InternalElementType element)
     {
         var current = element.CAEXParent;
         while (current is InternalElementType ie)
         {
-            if (_types.IsKindOf(ie, "FPD_Process")) return ie;
+            if (_types.IsKindOf(ie, _types.ProcessTypeName)) return ie;
             current = ie.CAEXParent;
         }
         return null;
@@ -157,13 +175,31 @@ public sealed class CaexMetamodel : IOclModel
 
     // ---- instance enumeration ------------------------------------------------------
 
-    /// <summary>Every InternalElement and InternalLink in the document that <c>oclIsKindOf(typeName)</c>.</summary>
+    /// <summary>
+    /// Every instance of <paramref name="typeName"/> in the document: the project
+    /// scope itself for the registry's project type, otherwise every matching
+    /// InternalElement and InternalLink. Throws <see cref="UnknownOclTypeException"/>
+    /// for a type the registry does not know — the validator turns that into a
+    /// diagnostic finding instead of a silent pass.
+    /// </summary>
     public IEnumerable<OclValue> InstancesOf(string typeName)
     {
         if (_document?.CAEXFile is null)
             throw new InvalidOperationException("CaexMetamodel was created without a document; InstancesOf requires one.");
+        if (!_types.KnowsType(typeName))
+            throw new UnknownOclTypeException(typeName);
+        return EnumerateInstances(_document, typeName);
+    }
 
-        foreach (var ie in AllElements(_document))
+    private IEnumerable<OclValue> EnumerateInstances(CAEXDocument document, string typeName)
+    {
+        if (typeName == _types.ProjectTypeName)
+        {
+            yield return OclValue.Obj(new CaexProjectRef(document));
+            yield break;
+        }
+
+        foreach (var ie in AllElements(document))
         {
             if (_types.IsKindOf(ie, typeName)) yield return Wrap(ie);
             foreach (var link in ie.InternalLink)
@@ -171,13 +207,32 @@ public sealed class CaexMetamodel : IOclModel
         }
     }
 
+    /// <summary>
+    /// Every InternalElement the registry cannot assign a type to (no recognised SUC
+    /// path or role). Such elements are invisible to all OCL rules — a validator
+    /// should report them as a diagnostic rather than let a mistyped model pass clean.
+    /// </summary>
+    public IEnumerable<InternalElementType> UnclassifiedElements()
+    {
+        if (_document?.CAEXFile is null) yield break;
+        foreach (var ie in AllElements(_document))
+            if (string.IsNullOrEmpty(_types.TypeOf(ie)))
+                yield return ie;
+    }
+
+    /// <summary>
+    /// Stable identifier for findings: the AML ID for elements (editor focus jumps
+    /// need the ID — names are not unique), the link name for connections, the file
+    /// name for the project scope.
+    /// </summary>
     public string? IdOf(OclValue instance)
     {
         if (instance.Kind != OclKind.Object) return null;
         return instance.AsObject() switch
         {
-            CaexElementRef r => string.IsNullOrEmpty(r.Element.Name) ? r.Element.ID : r.Element.Name,
+            CaexElementRef r => string.IsNullOrEmpty(r.Element.ID) ? r.Element.Name : r.Element.ID,
             CaexLinkRef l => l.Link.Name,
+            CaexProjectRef p => p.Document.CAEXFile?.FileName ?? "Project",
             _ => null,
         };
     }

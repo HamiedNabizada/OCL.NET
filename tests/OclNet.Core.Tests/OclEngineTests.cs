@@ -11,7 +11,8 @@ public class OclEngineTests
     private readonly OclEngine _engine = new();
 
     [Fact]
-    public void Parse_produces_an_ast() => Assert.NotNull(_engine.Parse("1 + 2"));
+    public void Parse_produces_the_expected_ast_shape() =>
+        Assert.IsType<Core.Ast.BinaryExpr>(_engine.Parse("1 + 2"));
 
     [Fact]
     public void Evaluate_binds_self_and_navigates()

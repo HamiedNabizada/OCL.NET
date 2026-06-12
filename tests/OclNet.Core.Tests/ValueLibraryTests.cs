@@ -71,4 +71,22 @@ public class ValueLibraryTests
         Assert.Equal("A", registry.Resolve("f", 0, "A")!.ContextType);
         Assert.Equal("B", registry.Resolve("f", 0, "B")!.ContextType);
     }
+
+    [Fact]
+    public void Registry_refuses_ambiguous_fallback_for_foreign_receiver()
+    {
+        // Two same-named defs on different contexts: a third receiver type must NOT
+        // silently get "the first one" — that would defeat type-scoped operations.
+        var defs = _parser.ParseDefinitions("context A def: f(): Boolean = true  context B def: f(): Boolean = false");
+        Assert.Null(new OperationRegistry(defs).Resolve("f", 0, "C"));
+    }
+
+    [Fact]
+    public void Registry_allows_unambiguous_fallback()
+    {
+        // Exactly one definition: a receiver whose concrete type name differs from
+        // the conceptual context (e.g. a binding wrapper) still resolves.
+        var defs = _parser.ParseDefinitions("context A def: g(): Boolean = true");
+        Assert.NotNull(new OperationRegistry(defs).Resolve("g", 0, "SomethingElse"));
+    }
 }

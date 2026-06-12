@@ -6,11 +6,11 @@
        reference validator. -->
   <PropertyGroup>
     <Authors>Hamied Nabizada</Authors>
-    <Company>Helmut Schmidt University</Company>
     <Product>OclNet</Product>
     <Version>0.1.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/hsu-aut</PackageProjectUrl>
+    <!-- PackageProjectUrl/RepositoryUrl: set once the public repository exists
+         (personal account — the engine is deliberately independent of any employer org). -->
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
