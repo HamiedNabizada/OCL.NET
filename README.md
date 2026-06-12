@@ -88,8 +88,18 @@ are added demand-driven.
 
 ## Specs & artifacts
 
-- [`spec/vdi3682-pure-rules.ocl`](spec/vdi3682-pure-rules.ocl) — the 30 executable PURE rules.
+- [`spec/vdi3682-pure-rules.ocl`](spec/vdi3682-pure-rules.ocl) — the 26 executable PURE rules.
+- [`spec/vdi3682-phase2-rules.ocl`](spec/vdi3682-phase2-rules.ocl) — the 4 FPD_Characteristic rules, deferred until the binding exposes characteristics (running them today would be a vacuous pass; the validator reports their context as a diagnostic instead).
 - [`spec/vdi3682-helpers.ocl`](spec/vdi3682-helpers.ocl) — geometry helper `def:` library.
+
+## Fail-loud guarantees
+
+A reference validator's worst failure mode is a silent pass. The engine therefore:
+unknown context types raise a diagnostic finding (never a silent skip); elements the
+type registry cannot classify are exposed via `CaexMetamodel.UnclassifiedElements()`;
+role-typed AML files (RoleRequirements without SUC paths) resolve correctly; and the
+project scope is a real enumerable instance, so project-level rules (uniqueness,
+minimum cardinality) actually fire.
 
 ## Build & test
 
@@ -99,8 +109,8 @@ dotnet test OclNet.sln
 dotnet test OclNet.sln --settings coverlet.runsettings
 ```
 
-161 tests; ~90% line coverage on engine code; 50 rules over a ~100-element model
-validate in ~20 ms.
+168 tests; ~90% line coverage on engine code; 50 rules over a ~100-element model
+with ~90 typed links validate in well under the 500 ms budget.
 
 ## Roadmap
 
