@@ -27,6 +27,10 @@ public sealed class OperationRegistry
     /// different context types, a mismatching receiver resolves to nothing: silently
     /// picking "the first one" would defeat type-scoped operations.
     /// </summary>
+    /// <summary>Built-in value kinds — never legal receivers for the conceptual-context fallback (a String is no Bounds).</summary>
+    private static readonly HashSet<string> BuiltinKinds = new(StringComparer.Ordinal)
+    { "String", "Integer", "Real", "Boolean", "Collection", "Void", "Invalid" };
+
     public OclOperationDef? Resolve(string name, int arity, string receiverType)
     {
         OclOperationDef? candidate = null;
@@ -38,6 +42,9 @@ public sealed class OperationRegistry
             candidate = definition;
             candidates++;
         }
-        return candidates == 1 ? candidate : null;
+        // Unambiguous fallback only for object receivers whose concrete type name
+        // merely differs from the conceptual context — never for built-in values
+        // ('foo'.isWithin(...) must stay an unsupported-operation error).
+        return candidates == 1 && !BuiltinKinds.Contains(receiverType) ? candidate : null;
     }
 }

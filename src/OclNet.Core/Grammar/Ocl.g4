@@ -13,6 +13,10 @@ grammar Ocl;
 // A rule file is one or more invariants and/or operation definitions.
 file_ : unit+ EOF ;
 
+// Anchored single-expression entry point: without the EOF a trailing-garbage
+// input like "true nad false" would silently parse as just "true".
+exprEof : expression EOF ;
+
 unit : constraint | operationDef ;
 
 constraint
@@ -41,7 +45,8 @@ expression
     | expression op=('<' | '<=' | '>' | '>=') expression                  # relExpr
     | expression op=('=' | '<>') expression                               # eqExpr
     | expression op='and' expression                                      # andExpr
-    | expression op=('or' | 'xor') expression                             # orExpr
+    | expression op='or' expression                                       # orExpr
+    | expression op='xor' expression                                      # xorExpr
     | <assoc=right> expression 'implies' expression                       # impliesExpr
     | 'let' IDENT (':' typeName)? '=' expression 'in' expression          # letExpr
     | 'if' expression 'then' expression 'else' expression 'endif'         # ifExpr

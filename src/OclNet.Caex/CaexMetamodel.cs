@@ -34,6 +34,20 @@ public sealed class CaexMetamodel : IOclModel
     private readonly ICaexTypeRegistry _types;
     private readonly CAEXDocument? _document;
 
+    // Element walk memoized per document: F1/F3 navigate project.containedElement per
+    // instance and D1 iterates it quadratically — without the cache that is a full
+    // document re-walk per evaluation. NOTE: create a fresh CaexMetamodel after
+    // structurally mutating the document (adding/removing elements).
+    private (CAEXDocument Doc, List<InternalElementType> Elements)? _elementCache;
+
+    // Property memoization: Aml.Engine attribute access is XML-backed and linear; the
+    // quadratic uniqueness rule alone touches the same identification attributes
+    // thousands of times. Element properties key on the stable AML ID; compound
+    // attributes returned from this cache are thereby reference-stable, so their
+    // sub-attribute lookups can key on the instance. Same freshness rule as above.
+    private readonly Dictionary<(string ElementId, string Property), OclValue> _elementPropCache = new();
+    private readonly Dictionary<(object Owner, string Property), OclValue> _attributePropCache = new();
+
     /// <summary>For evaluating expressions against already-obtained elements (no instance enumeration).</summary>
     public CaexMetamodel(ICaexTypeRegistry? types = null) : this(null, types) { }
 
@@ -78,13 +92,32 @@ public sealed class CaexMetamodel : IOclModel
 
     public OclValue GetProperty(object element, string propertyName) => element switch
     {
-        CaexElementRef r => GetElementProperty(r.Element, propertyName),
+        CaexElementRef r => GetElementPropertyCached(r.Element, propertyName),
         CaexLinkRef l => GetLinkProperty(l.Link, propertyName),
         CaexProjectRef p => GetProjectProperty(p.Document, propertyName),
         CaexBoundsRef b => GetBoundsProperty(b.ViewInformation, propertyName),
-        AttributeType a => ResolveAttribute(FindAttribute(a.Attribute, propertyName)),
+        AttributeType a => GetAttributePropertyCached(a, propertyName),
         _ => OclValue.Void,
     };
+
+    private OclValue GetElementPropertyCached(InternalElementType element, string name)
+    {
+        if (string.IsNullOrEmpty(element.ID)) return GetElementProperty(element, name);
+        var key = (element.ID, name);
+        if (_elementPropCache.TryGetValue(key, out var cached)) return cached;
+        var value = GetElementProperty(element, name);
+        _elementPropCache[key] = value;
+        return value;
+    }
+
+    private OclValue GetAttributePropertyCached(AttributeType attribute, string name)
+    {
+        var key = ((object)attribute, name);
+        if (_attributePropCache.TryGetValue(key, out var cached)) return cached;
+        var value = ResolveAttribute(FindAttribute(attribute.Attribute, name));
+        _attributePropCache[key] = value;
+        return value;
+    }
 
     private OclValue GetElementProperty(InternalElementType element, string name) => name switch
     {
@@ -231,7 +264,7 @@ public sealed class CaexMetamodel : IOclModel
         return instance.AsObject() switch
         {
             CaexElementRef r => string.IsNullOrEmpty(r.Element.ID) ? r.Element.Name : r.Element.ID,
-            CaexLinkRef l => l.Link.Name,
+            CaexLinkRef l => string.IsNullOrEmpty(l.Link.ID) ? l.Link.Name : l.Link.ID, // editor focus jumps need the ID
             CaexProjectRef p => p.Document.CAEXFile?.FileName ?? "Project",
             _ => null,
         };
@@ -288,12 +321,17 @@ public sealed class CaexMetamodel : IOclModel
     private static IEnumerable<AttributeType> SubAttributes(AttributeType? attribute) =>
         attribute?.Attribute ?? Enumerable.Empty<AttributeType>();
 
-    private static IEnumerable<InternalElementType> AllElements(CAEXDocument document)
+    private IReadOnlyList<InternalElementType> AllElements(CAEXDocument document)
     {
-        if (document?.CAEXFile is null) yield break;
-        foreach (var ih in document.CAEXFile.InstanceHierarchy)
-            foreach (var ie in Descendants(ih.InternalElement))
-                yield return ie;
+        if (_elementCache is { } cache && ReferenceEquals(cache.Doc, document)) return cache.Elements;
+
+        var elements = new List<InternalElementType>();
+        if (document?.CAEXFile is not null)
+            foreach (var ih in document.CAEXFile.InstanceHierarchy)
+                elements.AddRange(Descendants(ih.InternalElement));
+
+        _elementCache = (document!, elements);
+        return elements;
     }
 
     /// <summary>Pre-order depth-first walk, iterative so a deeply nested AML hierarchy cannot overflow the stack.</summary>

@@ -133,7 +133,11 @@ public class CaexValidationTests
         Assert.DoesNotContain(findings, f => f.RuleId == "ProcessOperatorMinimumCardinality");
         Assert.DoesNotContain(findings, f => f.RuleId == "ProjectMinimumProcess");                             // 2 processes exist
         Assert.Contains(findings, f => f.RuleId == "LongNameMandatory");                                       // longName empty throughout test.aml
-        Assert.Contains(findings, f => f.RuleId == "UniqueIdentifiers");                                       // empty uniqueIdents collide
+        // D1 guards empty idents (missing mandatory value is a D-category issue, not a
+        // duplicate) and exempts decomposition pairs — test.aml's empty uniqueIdents
+        // therefore no longer collide. The positive D1 case is covered by
+        // OclEngine/SideBySide duplicate-ident tests.
+        Assert.DoesNotContain(findings, f => f.RuleId == "UniqueIdentifiers");
     }
 
     // ---- silent-pass killers --------------------------------------------------------

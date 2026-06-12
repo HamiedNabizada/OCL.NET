@@ -23,6 +23,9 @@ public sealed class EvaluationEnvironment
     /// <summary>User-defined <c>def:</c> operations available to calls. Null if none were supplied.</summary>
     public OperationRegistry? Operations { get; }
 
+    /// <summary>Nesting depth of user-defined operation calls — guards against recursive <c>def:</c> definitions.</summary>
+    public int OperationDepth { get; private init; }
+
     public EvaluationEnvironment(IOclMetamodel? metamodel = null, OperationRegistry? operations = null)
     {
         _parent = null;
@@ -39,8 +42,8 @@ public sealed class EvaluationEnvironment
         Operations = parent.Operations;
     }
 
-    /// <summary>A fresh root scope sharing this environment's metamodel and operations — used when entering a <c>def:</c> body.</summary>
-    public EvaluationEnvironment NewRoot() => new(Metamodel, Operations);
+    /// <summary>A fresh root scope sharing this environment's metamodel and operations — used when entering a <c>def:</c> body (depth +1).</summary>
+    public EvaluationEnvironment NewRoot() => new(Metamodel, Operations) { OperationDepth = OperationDepth + 1 };
 
     /// <summary>Bind a variable in the current scope (e.g. <c>self</c>, a let name, an iterator var).</summary>
     public EvaluationEnvironment Bind(string name, OclValue value)

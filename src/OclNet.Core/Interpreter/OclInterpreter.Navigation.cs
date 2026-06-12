@@ -9,6 +9,12 @@ public sealed partial class OclInterpreter
 {
     private static readonly HashSet<string> TypeOperations = new() { "oclIsKindOf", "oclIsTypeOf", "oclType" };
 
+    private static readonly HashSet<string> IteratorNames = new()
+    { "select", "reject", "collect", "forAll", "exists", "closure", "closureDepth" };
+
+    /// <summary>Maximum nesting of user-defined operation calls — a recursive <c>def:</c> would otherwise StackOverflow the host process (uncatchable).</summary>
+    private const int MaxOperationDepth = 64;
+
     /// <summary>
     /// Property navigation <c>source.name</c>. Over a single object it delegates to
     /// the metamodel; over a collection it implicitly collects (OCL flattens one
@@ -43,6 +49,11 @@ public sealed partial class OclInterpreter
     {
         if (TypeOperations.Contains(expr.Name)) return EvaluateTypeOperation(expr, env);
 
+        // `coll->select(true)` parses as an operation call (no loop variable) — give
+        // the actual diagnosis instead of "operation not supported".
+        if (IteratorNames.Contains(expr.Name))
+            throw new NotSupportedException($"OCL iterator '{expr.Name}' requires a loop variable: ->{expr.Name}(e | ...).");
+
         var source = Evaluate(expr.Source, env);
         if (source.Kind == OclKind.Invalid) return OclValue.Invalid;
 
@@ -67,6 +78,10 @@ public sealed partial class OclInterpreter
     /// <summary>Evaluate a <c>def:</c> body in a fresh scope with <c>self</c> = receiver and the parameters bound to the arguments.</summary>
     private OclValue InvokeDefinition(OclOperationDef definition, OclValue receiver, IReadOnlyList<OclValue> arguments, EvaluationEnvironment env)
     {
+        if (env.OperationDepth >= MaxOperationDepth)
+            throw new InvalidOperationException(
+                $"def: operation '{definition.Name}' exceeded the call-depth limit of {MaxOperationDepth} — recursive helper definition?");
+
         var scope = env.NewRoot().Bind("self", receiver);
         for (var i = 0; i < definition.Parameters.Count && i < arguments.Count; i++)
             scope.Bind(definition.Parameters[i].Name, arguments[i]);
@@ -110,6 +125,12 @@ public sealed partial class OclInterpreter
         return Evaluate(condition.AsBool() ? expr.Then : expr.Else, env);
     }
 
-    private OclValue EvaluateCollectionLiteral(CollectionLiteralExpr expr, EvaluationEnvironment env) =>
-        OclValue.Collection(expr.Elements.Select(e => Evaluate(e, env)).ToList());
+    private OclValue EvaluateCollectionLiteral(CollectionLiteralExpr expr, EvaluationEnvironment env)
+    {
+        var elements = expr.Elements.Select(e => Evaluate(e, env)).ToList();
+        // Set/OrderedSet literals are duplicate-free: Set{1,1,2}->size() = 2.
+        return expr.Kind is "Set" or "OrderedSet"
+            ? OclValue.Collection(StandardLibrary.Distinct(elements))
+            : OclValue.Collection(elements);
+    }
 }

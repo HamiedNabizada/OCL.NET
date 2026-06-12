@@ -10,6 +10,12 @@ public sealed partial class OclInterpreter
 {
     private OclValue EvaluateIterator(IteratorExpr expr, EvaluationEnvironment env)
     {
+        // Only the quantifiers support the multi-variable (Cartesian) form; a second
+        // variable on select/collect/... would silently fall into the implicit-self
+        // fallback — fail loudly instead.
+        if (expr.Variables.Count > 1 && expr.Name is not ("forAll" or "exists"))
+            throw new NotSupportedException($"OCL iterator '{expr.Name}' takes exactly one loop variable.");
+
         var items = StandardLibrary.AsCollection(Evaluate(expr.Source, env));
         return expr.Name switch
         {
@@ -42,9 +48,10 @@ public sealed partial class OclInterpreter
         foreach (var element in items)
         {
             var mapped = EvaluateBody(expr, env, element);
-            // collect flattens one level (Collection(...) → its elements).
+            // collect flattens one level (Collection(...) → its elements) and drops
+            // undefined results — consistent with implicit collect via navigation.
             if (mapped.Kind == OclKind.Collection) result.AddRange(mapped.AsCollection());
-            else result.Add(mapped);
+            else if (mapped.Kind != OclKind.Void) result.Add(mapped);
         }
         return OclValue.Collection(result);
     }

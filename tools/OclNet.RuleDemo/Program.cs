@@ -28,10 +28,47 @@ var texPath = args[2];
 var parser = new OclParser();
 var validator = new OclValidator();
 
+// ---- Severity je Regel nach Katalog (der Anhang muss dieselben Severities zeigen) --
+var katalogSeverity = new Dictionary<string, ValidationSeverity>(StringComparer.Ordinal)
+{
+    ["ProjectMinimumProcess"] = ValidationSeverity.Error,                  // A1
+    ["SystemLimitCardinality"] = ValidationSeverity.Error,                 // A2
+    ["StateMinimumCardinality"] = ValidationSeverity.Warning,              // A3
+    ["ProcessOperatorMinimumCardinality"] = ValidationSeverity.Warning,    // A4
+    ["FlowEndpointsTyped"] = ValidationSeverity.Error,                     // C1
+    ["NoStateToStateFlow"] = ValidationSeverity.Error,                     // C2
+    ["NoProcessOperatorToProcessOperatorFlow"] = ValidationSeverity.Error, // C3
+    ["UsageEndpointsTyped"] = ValidationSeverity.Error,                    // C4
+    ["NoDuplicateConnections"] = ValidationSeverity.Warning,               // C5
+    ["FlowDirected"] = ValidationSeverity.Error,                           // C6
+    ["NoMixedFlowTypes"] = ValidationSeverity.Warning,                     // C9
+    ["UniqueIdentifiers"] = ValidationSeverity.Error,                      // D1
+    ["ProcessOperatorNamed"] = ValidationSeverity.Info,                    // D3
+    ["StateNamed"] = ValidationSeverity.Info,                              // D4
+    ["TechnicalResourceNamed"] = ValidationSeverity.Info,                  // D5
+    ["ProcessNamed"] = ValidationSeverity.Warning,                         // D6
+    ["LongNameMandatory"] = ValidationSeverity.Error,                      // D7
+    ["VersionRevisionPresent"] = ValidationSeverity.Warning,               // D8
+    ["RefObjResolvable"] = ValidationSeverity.Error,                       // F1
+    ["RefProcessResolvable"] = ValidationSeverity.Error,                   // F2
+    ["AllReferencesResolvable"] = ValidationSeverity.Error,                // F3
+    ["ProcessOperatorHasIO"] = ValidationSeverity.Warning,                 // G1
+    ["StateHasConcreteType"] = ValidationSeverity.Error,                   // G2
+    ["NoSelfReference"] = ValidationSeverity.Error,                        // G3
+    ["NoOrphanedElements"] = ValidationSeverity.Warning,                   // G4
+    ["SourceTargetSameProcess"] = ValidationSeverity.Error,                // I3
+};
+
 // ---- Regelsatz: publizierte PURE-Regeln + B2 (Geometrie, mit def:-Helpern) ------
 var pureBlocks = SplitRules(File.ReadAllText(Path.Combine(specDir, "vdi3682-pure-rules.ocl"))).ToList();
+if (pureBlocks.Count != 26)
+    throw new InvalidOperationException($"vdi3682-pure-rules.ocl: 26 Regeln erwartet, {pureBlocks.Count} gefunden (SplitRules-Drift?).");
 var baseRules = pureBlocks
-    .Select(b => new OclRuleSpec(parser.ParseConstraint(b).Name ?? "?", ValidationSeverity.Warning, "Katalog", b))
+    .Select(b =>
+    {
+        var name = parser.ParseConstraint(b).Name ?? "?";
+        return new OclRuleSpec(name, katalogSeverity.GetValueOrDefault(name, ValidationSeverity.Warning), "Katalog", b);
+    })
     .ToList();
 baseRules.Add(new OclRuleSpec("ProcessOperatorWithinSystemLimit", ValidationSeverity.Error, "Katalog B2",
     "context FPD_ProcessOperator inv ProcessOperatorWithinSystemLimit: " +
@@ -68,8 +105,7 @@ var demos = new List<Demo>
         }),
 
     new("A3 — zu wenige Zustände",
-        "Der Eingangszustand \\texttt{Input} wird gelöscht; \\texttt{TestProcess} behält nur einen Zustand. " +
-        "Die Folgebefunde zeigen, dass der verwaiste Fluss \\texttt{Input\\_to\\_Step} dadurch ebenfalls ungültig wird.",
+        "Der Eingangszustand \\texttt{Input} wird gelöscht; \\texttt{TestProcess} behält nur einen Zustand.",
         new[] { "StateMinimumCardinality" },
         doc => Child(Process(doc, "TestProcess"), "Input").Remove()),
 
@@ -184,7 +220,14 @@ foreach (var demo in demos)
         lokaleBaseline = Validate(doc, compiled).Select(Key).ToHashSet();
     }
 
+    // Namen VOR der Mutation einsammeln (eine Mutation kann Namen leeren oder
+    // Elemente entfernen) und um danach hinzugekommene Elemente ergänzen.
+    var namen = NameMap(doc);
+
     demo.Mutation(doc);
+    foreach (var (id, name) in NameMap(doc))
+        namen.TryAdd(id, name);
+
     var findings = Validate(doc, compiled);
     var delta = findings.Where(f => !lokaleBaseline.Contains(Key(f))).ToList();
 
@@ -194,7 +237,7 @@ foreach (var demo in demos)
             throw new InvalidOperationException(
                 $"Demo '{demo.Titel}': erwartete Regel '{erwartet}' hat NICHT gefeuert. Geliefert: {string.Join(", ", geliefert)}");
 
-    DemoAbschnitt(sb, demoNr, demo, delta, NameMap(doc));
+    DemoAbschnitt(sb, demoNr, demo, delta, namen);
     Console.WriteLine($"Demo {demoNr:00} ok: {demo.Titel}  ->  {delta.Count} Befund(e)");
 }
 
@@ -336,18 +379,24 @@ static Dictionary<string, string> NameMap(CAEXDocument doc)
 static string Aufloesen(string? text, Dictionary<string, string> namen)
 {
     if (string.IsNullOrEmpty(text)) return "";
-    foreach (var (id, name) in namen)
-        text = text.Replace(id, name);
+    // Längste Keys zuerst ({guid} vor guid) und case-insensitiv (CAEX-IDs sind es auch).
+    foreach (var (id, name) in namen.OrderByDescending(kv => kv.Key.Length))
+        text = System.Text.RegularExpressions.Regex.Replace(
+            text, System.Text.RegularExpressions.Regex.Escape(id), name,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     return text;
 }
 
 static string Tex(string? s)
 {
     if (string.IsNullOrEmpty(s)) return "";
-    return s.Replace("\\", "\\textbackslash{}")
+    // Backslash über Platzhalter, sonst würden die Braces von \textbackslash{}
+    // anschließend mit-escaped (\textbackslash\{\}).
+    return s.Replace("\\", "\x01")
             .Replace("&", "\\&").Replace("%", "\\%").Replace("#", "\\#")
             .Replace("$", "\\$").Replace("_", "\\_")
             .Replace("{", "\\{").Replace("}", "\\}")
+            .Replace("\x01", "\\textbackslash{}")
             .Replace("\"", "\\grqq{}").Replace("→", "$\\rightarrow$");
 }
 
@@ -405,7 +454,9 @@ void DemoAbschnitt(StringBuilder sb, int nr, Demo demo, List<ValidationFinding> 
     foreach (var f in delta.Take(10))
     {
         var hervor = demo.Erwartet.Contains(f.RuleId) ? "\\textbf" : "\\textnormal";
-        sb.AppendLine($"  \\item {hervor}{{[{f.Severity}] \\texttt{{{Tex(f.RuleId)}}}}} --- {Tex(Aufloesen(f.Message, namen))}");
+        // Das "[RuleId] "-Präfix der Engine-Message ist im Item redundant (die ID steht davor).
+        var message = f.Message.StartsWith($"[{f.RuleId}] ") ? f.Message[($"[{f.RuleId}] ".Length)..] : f.Message;
+        sb.AppendLine($"  \\item {hervor}{{[{f.Severity}] \\texttt{{{Tex(f.RuleId)}}}}} --- {Tex(Aufloesen(message, namen))}");
     }
     if (delta.Count > 10) sb.AppendLine($"  \\item \\textit{{\\dots{{}} und {delta.Count - 10} weitere Folgebefunde}}");
     sb.AppendLine("\\end{itemize}");

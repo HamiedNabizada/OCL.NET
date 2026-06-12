@@ -35,10 +35,21 @@ public static class StandardLibrary
     /// Phase-1 standard operation, so the interpreter can distinguish "unsupported"
     /// from a legitimate result.
     /// </summary>
+    /// <summary>String-typed operations — a Void source makes these undefined (Invalid), not "unsupported".</summary>
+    private static readonly HashSet<string> StringOperations = new(StringComparer.Ordinal)
+    {
+        "matches", "toUpperCase", "toLowerCase", "trim", "concat", "indexOf", "substring",
+    };
+
     public static OclValue? Invoke(string name, OclValue source, IReadOnlyList<OclValue> arguments, CallStyle style)
     {
         // A collection operation on an erroneous source stays erroneous.
         if (source.Kind == OclKind.Invalid) return OclValue.Invalid;
+
+        // A string operation on an undefined source is undefined — without this,
+        // `x->matches(...)` with x = Void would fall through to "not supported"
+        // and surface as a misleading evaluation error instead of a violation.
+        if (source.Kind == OclKind.Void && StringOperations.Contains(name)) return OclValue.Invalid;
 
         // String operations: `matches` applies regardless of call style (the catalogue
         // writes `path->matches(...)`); the others are dot-style value operations, so
@@ -116,7 +127,8 @@ public static class StandardLibrary
     private static bool Contains(IReadOnlyList<OclValue> items, OclValue value) =>
         items.Any(e => e.ValueEquals(value));
 
-    private static List<OclValue> Distinct(IReadOnlyList<OclValue> items)
+    /// <summary>Duplicate-free copy using OCL value equality (also used for Set/OrderedSet literals).</summary>
+    internal static List<OclValue> Distinct(IReadOnlyList<OclValue> items)
     {
         var result = new List<OclValue>();
         foreach (var item in items)

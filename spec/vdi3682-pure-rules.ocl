@@ -44,10 +44,10 @@ context FPD_ProcessOperator inv NoMixedFlowTypes:
   let outFlows = self.outgoingConnections->select(c | c.oclIsKindOf(FPD_Flow)) in outFlows->forAll(f1, f2 | f1.oclType() = f2.oclType())
 
 context FPD_Project inv UniqueIdentifiers:
-  let allElements = self.process.containedElement->asSet() in allElements->forAll(e1, e2 | e1 <> e2 implies e1.identification.uniqueIdent <> e2.identification.uniqueIdent)
+  let allElements = self.process.containedElement->asSet() in allElements->forAll(e1, e2 | (e1 <> e2 and e1.identification.uniqueIdent->notEmpty() and e1.refObj <> e2.identification.uniqueIdent and e2.refObj <> e1.identification.uniqueIdent) implies e1.identification.uniqueIdent <> e2.identification.uniqueIdent)
 
 context FPD_ProcessOperator inv ProcessOperatorNamed:
-  (self.identification.longName->notEmpty() and self.identification.longName->size() > 0) or (self.identification.shortName->notEmpty() and self.identification.shortName->size() > 0) or (self.name->notEmpty())
+  (self.identification.longName->notEmpty() and self.identification.longName.size() > 0) or (self.identification.shortName->notEmpty() and self.identification.shortName.size() > 0) or (self.name->notEmpty())
 
 context FPD_State inv StateNamed:
   self.identification.longName->notEmpty() or self.identification.shortName->notEmpty() or self.name->notEmpty()
@@ -59,7 +59,7 @@ context FPD_Process inv ProcessNamed:
   self.name->notEmpty()
 
 context FPD_Object inv LongNameMandatory:
-  self.identification.longName->notEmpty() and self.identification.longName->size() > 0
+  self.identification.longName->notEmpty() and self.identification.longName.size() > 0
 
 context FPD_Object inv VersionRevisionPresent:
   self.identification.versionNumber->size() = 1 and self.identification.revisionNumber->size() = 1
@@ -80,10 +80,10 @@ context FPD_State inv StateHasConcreteType:
   self.oclIsKindOf(FPD_Product) xor self.oclIsKindOf(FPD_Energy) xor self.oclIsKindOf(FPD_Information)
 
 context FPD_Connection inv NoSelfReference:
-  self.source <> self.target
+  (self.source->notEmpty() and self.target->notEmpty()) implies self.source <> self.target
 
 context FPD_Object inv NoOrphanedElements:
   (self.oclIsKindOf(FPD_State) or self.oclIsKindOf(FPD_ProcessOperator) or self.oclIsKindOf(FPD_TechnicalResource)) implies (self.incomingConnections->notEmpty() or self.outgoingConnections->notEmpty())
 
 context FPD_Connection inv SourceTargetSameProcess:
-  self.source.process = self.target.process
+  (self.source->notEmpty() and self.target->notEmpty()) implies self.source.process = self.target.process

@@ -59,7 +59,8 @@ internal sealed class OclAstBuilder : Gen.OclBaseVisitor<OclExpression>
     public override OclExpression VisitAddExpr(Gen.OclParser.AddExprContext ctx) => Bin(ctx.op.Text, ctx, ctx.expression(0), ctx.expression(1));
     public override OclExpression VisitRelExpr(Gen.OclParser.RelExprContext ctx) => Bin(ctx.op.Text, ctx, ctx.expression(0), ctx.expression(1));
     public override OclExpression VisitEqExpr(Gen.OclParser.EqExprContext ctx) => Bin(ctx.op.Text, ctx, ctx.expression(0), ctx.expression(1));
-    public override OclExpression VisitOrExpr(Gen.OclParser.OrExprContext ctx) => Bin(ctx.op.Text, ctx, ctx.expression(0), ctx.expression(1));
+    public override OclExpression VisitOrExpr(Gen.OclParser.OrExprContext ctx) => Bin("or", ctx, ctx.expression(0), ctx.expression(1));
+    public override OclExpression VisitXorExpr(Gen.OclParser.XorExprContext ctx) => Bin("xor", ctx, ctx.expression(0), ctx.expression(1));
     public override OclExpression VisitAndExpr(Gen.OclParser.AndExprContext ctx) => Bin("and", ctx, ctx.expression(0), ctx.expression(1));
     public override OclExpression VisitImpliesExpr(Gen.OclParser.ImpliesExprContext ctx) => Bin("implies", ctx, ctx.expression(0), ctx.expression(1));
 

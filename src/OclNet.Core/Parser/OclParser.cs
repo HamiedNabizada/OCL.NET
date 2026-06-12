@@ -40,8 +40,12 @@ public sealed class OclParser
         return constraints[0];
     }
 
-    /// <summary>Parse a bare expression (no <c>context/inv</c> wrapper) — convenient for tests and REPL use.</summary>
-    public OclExpression ParseExpression(string ocl) => _builder.Visit(Guard(ocl, p => p.expression()));
+    /// <summary>
+    /// Parse a bare expression (no <c>context/inv</c> wrapper) — convenient for tests
+    /// and REPL use. EOF-anchored: trailing garbage (e.g. a typo splitting an operator)
+    /// is a parse error, never silently ignored.
+    /// </summary>
+    public OclExpression ParseExpression(string ocl) => _builder.Visit(Guard(ocl, p => p.exprEof().expression()));
 
     private OclConstraint BuildConstraint(Gen.OclParser.ConstraintContext ctx) =>
         new(ctx.typeName().GetText(), ctx.name?.Text, _builder.Visit(ctx.expression()))
