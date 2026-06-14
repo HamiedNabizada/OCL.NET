@@ -27,8 +27,6 @@
 
   <ItemGroup>
     <None Include="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\spec\vdi3682-helpers.ocl" Link="TestData\vdi3682-helpers.ocl" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\spec\vdi3682-pure-rules.ocl" Link="TestData\vdi3682-pure-rules.ocl" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

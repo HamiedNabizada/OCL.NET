@@ -25,8 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The published helper artifact, linked in so tests run against the real file. -->
-    <None Include="..\..\spec\vdi3682-helpers.ocl" Link="TestData\vdi3682-helpers.ocl" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
