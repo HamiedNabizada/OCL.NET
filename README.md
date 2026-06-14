@@ -125,21 +125,6 @@ omissions are noted explicitly and grow demand-driven rather than speculatively.
 The engine is not a certified OCL processor — its conformance claim is that the
 subset it implements matches the specification, verified by the test suite.
 
-## Author
-
-Hamied Nabizada — [Helmut Schmidt University Hamburg, Institute of Automation
-Technology](https://www.hsu-hh.de/aut). Contact: `hamied.nabizada@hsu-hh.de`.
-
-## Citation
-
-A Zenodo DOI is reserved for the first public release; until it is minted,
-please cite this repository directly:
-
-```
-Nabizada, H. (2026). OclNet — an embeddable OCL engine for .NET.
-GitHub: https://github.com/hamiedNabizada/OclNet
-```
-
 ## License
 
 [MIT](LICENSE) — see file for full text.
