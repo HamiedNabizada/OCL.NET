@@ -6,7 +6,7 @@
         <Configuration>
           <!-- Exclude ANTLR-generated lexer/parser/visitor (emitted under obj/). -->
           <ExcludeByFile>**/obj/**/*.cs</ExcludeByFile>
-          <Exclude>[*]OclNet.Core.Grammar.*</Exclude>
+          <Exclude>[*]OCL.NET.Core.Grammar.*</Exclude>
           <SkipAutoProps>true</SkipAutoProps>
         </Configuration>
       </DataCollector>

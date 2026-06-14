@@ -1,16 +1,16 @@
 <Project>
 
-  <!-- Shared metadata for all OclNet projects. Package-specific fields (PackageId,
+  <!-- Shared metadata for all OCL.NET projects. Package-specific fields (PackageId,
        Description) live in each shippable project's .csproj. License is MIT by
        default — adjust if a different open-source license is chosen for the
        reference validator. -->
   <PropertyGroup>
     <Authors>Hamied Nabizada</Authors>
-    <Product>OclNet</Product>
+    <Product>OCL.NET</Product>
     <Version>0.1.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/hamiedNabizada/OclNet</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/hamiedNabizada/OclNet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/hamiedNabizada/OCL.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/hamiedNabizada/OCL.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>ocl;object-constraint-language;validation;vdi3682;automationml;caex</PackageTags>

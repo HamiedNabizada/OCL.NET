@@ -1,4 +1,4 @@
-# OclNet
+# OCL.NET
 
 An embeddable **OCL (Object Constraint Language) engine for .NET**. It parses OCL
 constraints and evaluates them against a model, producing structured validation
@@ -9,7 +9,7 @@ or domain.
 ## Why this exists
 
 There is no mature, embeddable OCL engine for .NET — Eclipse OCL is a
-Java/Eclipse-stack tool. OclNet fills that gap with a clean, dependency-light,
+Java/Eclipse-stack tool. OCL.NET fills that gap with a clean, dependency-light,
 readable implementation: a fast tree-walking interpreter with three-valued logic, a
 compiled rule-set API, and a metamodel seam that keeps the OCL language entirely
 separate from whatever you bind it to.
@@ -17,8 +17,8 @@ separate from whatever you bind it to.
 ## Quickstart
 
 ```csharp
-using OclNet.Core;
-using OclNet.Core.Validation;
+using OCL.NET.Core;
+using OCL.NET.Core.Validation;
 
 var engine = new OclEngine();
 
@@ -36,11 +36,11 @@ List<ValidationFinding> findings = engine.Validate(model, compiled);
 ```
 
 `model` is any `IOclModel` binding. To validate AutomationML/CAEX documents, the
-repository ships a ready-made binding in `OclNet.Caex`:
+repository ships a ready-made binding in `OCL.NET.Caex`:
 
 ```csharp
 using Aml.Engine.CAEX;
-using OclNet.Caex;
+using OCL.NET.Caex;
 
 var doc = CAEXDocument.LoadFromFile("model.aml");
 var model = new CaexMetamodel(doc);            // IOclModel over Aml.Engine
@@ -58,16 +58,16 @@ OCL text ─▶ Parser ─▶ AST (pure data) ─▶ Interpreter ─▶ OclValue
 
 | Layer | Project / namespace | Notes |
 |---|---|---|
-| AST | `OclNet.Core.Ast` | Pure-data records + source locations. |
-| Values | `OclNet.Core.Values` | `OclValue` tagged union incl. `OclVoid`/`OclInvalid`. |
-| Interpreter | `OclNet.Core.Interpreter` | Tree-walking, three-valued boolean logic; `def:` helper operations. |
-| Parser | `OclNet.Core.Parser` (+ ANTLR4 grammar `Grammar/Ocl.g4`) | Fail-fast `OclParseException` with location. |
-| Validation | `OclNet.Core.Validation` | `OclValidator`, `CompiledRuleSet`, `ValidationFinding`. |
-| Metamodel seam | `OclNet.Core.Metamodel` | `IOclMetamodel` / `IOclModel`. |
-| CAEX binding | `OclNet.Caex` | Example binding: `CaexMetamodel` over Aml.Engine. |
+| AST | `OCL.NET.Core.Ast` | Pure-data records + source locations. |
+| Values | `OCL.NET.Core.Values` | `OclValue` tagged union incl. `OclVoid`/`OclInvalid`. |
+| Interpreter | `OCL.NET.Core.Interpreter` | Tree-walking, three-valued boolean logic; `def:` helper operations. |
+| Parser | `OCL.NET.Core.Parser` (+ ANTLR4 grammar `Grammar/Ocl.g4`) | Fail-fast `OclParseException` with location. |
+| Validation | `OCL.NET.Core.Validation` | `OclValidator`, `CompiledRuleSet`, `ValidationFinding`. |
+| Metamodel seam | `OCL.NET.Core.Metamodel` | `IOclMetamodel` / `IOclModel`. |
+| CAEX binding | `OCL.NET.Caex` | Example binding: `CaexMetamodel` over Aml.Engine. |
 
-`OclNet.Core` has **no dependency on Aml.Engine** — the CAEX specifics live entirely
-in `OclNet.Caex`. A different binding (EMF, POCOs, a graph DB, …) is a new
+`OCL.NET.Core` has **no dependency on Aml.Engine** — the CAEX specifics live entirely
+in `OCL.NET.Caex`. A different binding (EMF, POCOs, a graph DB, …) is a new
 `IOclMetamodel` implementation, not a fork of the core.
 
 ## Supported OCL subset
@@ -95,7 +95,7 @@ every rule. The CAEX binding implements both, and exposes unclassified elements 
 
 As a worked example, the repository includes a rule set and the matching CAEX
 binding for the Formalized Process Description (VDI 3682) under
-[`spec/`](spec/) and `OclNet.Caex`. It demonstrates running a real, published
+[`spec/`](spec/) and `OCL.NET.Caex`. It demonstrates running a real, published
 constraint catalogue against AutomationML documents end-to-end — a concrete
 showcase of the engine, not part of the core. Bindings and rule sets for other
 domains are added the same way.
@@ -103,9 +103,9 @@ domains are added the same way.
 ## Build & test
 
 ```bash
-dotnet test OclNet.sln
+dotnet test OCL.NET.sln
 # with coverage (generated parser excluded):
-dotnet test OclNet.sln --settings coverlet.runsettings
+dotnet test OCL.NET.sln --settings coverlet.runsettings
 ```
 
 168 tests; ~90% line coverage on engine code. A 50-rule set over a ~100-element
@@ -113,7 +113,7 @@ model with ~90 typed links validates in well under the 500 ms budget.
 
 ## OCL conformance
 
-OclNet implements a subset of OMG OCL 2.4 (`formal/2014-02-03`). The covered
+OCL.NET implements a subset of OMG OCL 2.4 (`formal/2014-02-03`). The covered
 constructs are listed under *Supported OCL subset*; the structural omissions are
 noted explicitly and grow demand-driven rather than speculatively. The engine is not
 a certified OCL processor — its conformance claim is that the subset it implements

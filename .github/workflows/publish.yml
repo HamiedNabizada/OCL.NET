@@ -1,6 +1,6 @@
 name: Publish
 
-# Pushes OclNet.Core and OclNet.Caex to NuGet when a version tag (e.g. v0.1.0) is pushed.
+# Pushes OCL.NET.Core and OCL.NET.Caex to NuGet when a version tag (e.g. v0.1.0) is pushed.
 # Requires a repository secret NUGET_API_KEY with push rights on nuget.org.
 on:
   push:
@@ -21,6 +21,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - run: dotnet test OclNet.sln -c Release --nologo
-      - run: dotnet pack OclNet.sln -c Release -o artifacts --nologo
+      - run: dotnet test OCL.NET.sln -c Release --nologo
+      - run: dotnet pack OCL.NET.sln -c Release -o artifacts --nologo
       - run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

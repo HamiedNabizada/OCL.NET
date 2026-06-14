@@ -21,6 +21,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - run: dotnet restore OclNet.sln
-      - run: dotnet build OclNet.sln -c Release --no-restore
-      - run: dotnet test OclNet.sln -c Release --no-build --nologo
+      - run: dotnet restore OCL.NET.sln
+      - run: dotnet build OCL.NET.sln -c Release --no-restore
+      - run: dotnet test OCL.NET.sln -c Release --no-build --nologo
