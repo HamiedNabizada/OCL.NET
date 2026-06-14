@@ -91,14 +91,16 @@ surface model elements it could not classify rather than leaving them invisible 
 every rule. The CAEX binding implements both, and exposes unclassified elements via
 `CaexMetamodel.UnclassifiedElements()`.
 
-## Example application: a machine-checkable rule set
+## CAEX binding
 
-As a worked example, the repository includes a rule set and the matching CAEX
-binding for the Formalized Process Description (VDI 3682) under
-[`spec/`](spec/) and `OCL.NET.Caex`. It demonstrates running a real, published
-constraint catalogue against AutomationML documents end-to-end — a concrete
-showcase of the engine, not part of the core. Bindings and rule sets for other
-domains are added the same way.
+The repository ships `OCL.NET.Caex`, a ready-made `IOclMetamodel` over
+Aml.Engine that binds OCL navigation to CAEX `InternalElement`s,
+`ExternalInterface`s and `InternalLink`s. It is one example of how a
+binding looks — bindings for EMF, POCOs, a graph DB, etc. are added the
+same way (a new `IOclMetamodel` implementation, no fork of the core).
+
+Domain-specific rule sets live in the libraries that consume the engine,
+not in this repo.
 
 ## Build & test
 
