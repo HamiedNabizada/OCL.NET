@@ -34,7 +34,7 @@ public sealed partial class OclInterpreter
     /// <summary>
     /// Resolve a name: a bound variable first, otherwise OCL's implicit-self rule —
     /// an unqualified name in a constraint body is a property of <c>self</c>
-    /// (so <c>source</c> in <c>context FPD_Flow</c> means <c>self.source</c>).
+    /// (so <c>source</c> in <c>context Flow</c> means <c>self.source</c>).
     /// </summary>
     private static OclValue EvaluateVariable(VariableExpr expr, EvaluationEnvironment env)
     {

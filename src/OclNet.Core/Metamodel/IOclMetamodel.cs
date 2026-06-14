@@ -8,13 +8,12 @@ namespace OclNet.Core.Metamodel;
 /// elements are* flows through this interface — type identity, type hierarchy,
 /// and property navigation.
 ///
-/// The first implementation binds to CAEX / Aml.Engine (project
-/// <c>OclNet.Caex</c>), mapping OCL type names like <c>FPD_State</c> onto
-/// <c>SupportedRoleClass</c> / <c>RefBaseSystemUnitPath</c> and OCL navigation
-/// like <c>self.identification.longName</c> onto the CAEX attribute hierarchy.
-/// Keeping this an interface is what makes the engine reusable beyond VDI 3682:
-/// a different binding (EMF/Ecore, plain POCOs, …) is a different implementation,
-/// not a fork of the core.
+/// The example implementation binds to CAEX / Aml.Engine (project
+/// <c>OclNet.Caex</c>), mapping OCL type names onto <c>SupportedRoleClass</c> /
+/// <c>RefBaseSystemUnitPath</c> and OCL navigation like <c>self.a.b</c> onto the
+/// CAEX attribute hierarchy. Keeping this an interface is what makes the engine
+/// reusable across domains: a different binding (EMF/Ecore, plain POCOs, …) is a
+/// different implementation, not a fork of the core.
 ///
 /// Implementations MUST compare element identity stably (e.g. by AML ID), because
 /// some model APIs — Aml.Engine in particular — hand out non-reference-stable

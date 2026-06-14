@@ -90,8 +90,8 @@ public sealed partial class OclInterpreter
 
     /// <summary>
     /// The type operations read their argument as a type *name*, not a value:
-    /// <c>oclIsKindOf(FPD_State)</c> never evaluates <c>FPD_State</c>. <c>oclType()</c>
-    /// is represented as the type-name string so the catalogue's
+    /// <c>oclIsKindOf(State)</c> never evaluates <c>State</c>. <c>oclType()</c>
+    /// is represented as the type-name string so that
     /// <c>a.oclType() = b.oclType()</c> comparisons work.
     /// </summary>
     private OclValue EvaluateTypeOperation(OperationCallExpr expr, EvaluationEnvironment env)
