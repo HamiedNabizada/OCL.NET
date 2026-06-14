@@ -116,3 +116,30 @@ with ~90 typed links validate in well under the 500 ms budget.
 
 See [019-OCL-Engine.md](../FPB.JS_Docs/Geplante-Features/019-OCL-Engine.md) and the
 [rule-catalogue audit](../FPB.JS_Docs/Standards/Drafts/VDI3682-Blatt3-Regelkatalog-Audit.md).
+
+## OCL conformance
+
+OclNet implements a subset of OMG OCL 2.4 (`formal/2014-02-03`). The covered
+constructs are listed under *Supported OCL subset* above; the structural
+omissions are noted explicitly and grow demand-driven rather than speculatively.
+The engine is not a certified OCL processor — its conformance claim is that the
+subset it implements matches the specification, verified by the test suite.
+
+## Author
+
+Hamied Nabizada — [Helmut Schmidt University Hamburg, Institute of Automation
+Technology](https://www.hsu-hh.de/aut). Contact: `hamied.nabizada@hsu-hh.de`.
+
+## Citation
+
+A Zenodo DOI is reserved for the first public release; until it is minted,
+please cite this repository directly:
+
+```
+Nabizada, H. (2026). OclNet — an embeddable OCL engine for .NET.
+GitHub: https://github.com/hamiedNabizada/OclNet
+```
+
+## License
+
+[MIT](LICENSE) — see file for full text.

@@ -9,9 +9,17 @@
     <Product>OclNet</Product>
     <Version>0.1.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <!-- PackageProjectUrl/RepositoryUrl: set once the public repository exists
-         (personal account — the engine is deliberately independent of any employer org). -->
+    <PackageProjectUrl>https://github.com/hamiedNabizada/OclNet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/hamiedNabizada/OclNet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>ocl;object-constraint-language;validation;vdi3682;automationml;caex</PackageTags>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <!-- Include README.md in NuGet packages that opt in via PackageReadmeFile. -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)README.md') And '$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
