@@ -1,7 +1,9 @@
--- VDI 3682 Blatt 3 — PURE rule set (Phase 1), executable by OclNet.
+-- FPD validation rule set — Phase 1 (PURE), executable by OCL.NET.
 -- The 26 structural constraints that map directly to OCL over the FPD model AND
 -- are executable against the CAEX serialization today (cardinalities, connection
 -- typing, naming, reference resolution, semantics).
+-- Informed by VDI 3682 Parts 1 and 2 plus tool-level conventions for the AML
+-- serialization. This is an implementation profile, not a normative document.
 -- Geometry (B) and schema-resolution (J) rules ship separately; see
 -- vdi3682-helpers.ocl for the def: library. The four FPD_Characteristic rules
 -- (E1/E2/E4/E5) live in vdi3682-phase2-rules.ocl until the binding exposes
@@ -77,7 +79,7 @@ context FPD_ProcessOperator inv ProcessOperatorHasIO:
   self.incomingConnections->select(c | c.oclIsKindOf(FPD_Flow))->size() >= 1 and self.outgoingConnections->select(c | c.oclIsKindOf(FPD_Flow))->size() >= 1
 
 context FPD_State inv StateHasConcreteType:
-  self.oclIsKindOf(FPD_Product) xor self.oclIsKindOf(FPD_Energy) xor self.oclIsKindOf(FPD_Information)
+  Sequence{FPD_Product, FPD_Energy, FPD_Information}->select(t | self.oclIsKindOf(t))->size() = 1
 
 context FPD_Connection inv NoSelfReference:
   (self.source->notEmpty() and self.target->notEmpty()) implies self.source <> self.target

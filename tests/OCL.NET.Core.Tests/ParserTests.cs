@@ -146,7 +146,7 @@ public class ParserTests
         ("F2", "context FPD_ProcessOperator inv RefProcessResolvable: self.refProcess->notEmpty() implies self.project.process->exists(p | p.id = self.refProcess)"),
         ("F3", "context FPD_Object inv AllReferencesResolvable: Sequence{self.refObj, self.refBaseObj, self.refExtendedObj, self.refComposedObj}->select(r | r->notEmpty())->forAll(r | self.project.containedElement->exists(e | e.identification.uniqueIdent = r))"),
         ("G1", "context FPD_ProcessOperator inv ProcessOperatorHasIO: self.incomingConnections->select(c | c.oclIsKindOf(FPD_Flow))->size() >= 1 and self.outgoingConnections->select(c | c.oclIsKindOf(FPD_Flow))->size() >= 1"),
-        ("G2", "context FPD_State inv StateHasConcreteType: self.oclIsKindOf(FPD_Product) xor self.oclIsKindOf(FPD_Energy) xor self.oclIsKindOf(FPD_Information)"),
+        ("G2", "context FPD_State inv StateHasConcreteType: Sequence{FPD_Product, FPD_Energy, FPD_Information}->select(t | self.oclIsKindOf(t))->size() = 1"),
         ("G3", "context FPD_Connection inv NoSelfReference: (self.source->notEmpty() and self.target->notEmpty()) implies self.source <> self.target"),
         ("G4", "context FPD_Object inv NoOrphanedElements: (self.oclIsKindOf(FPD_State) or self.oclIsKindOf(FPD_ProcessOperator) or self.oclIsKindOf(FPD_TechnicalResource)) implies (self.incomingConnections->notEmpty() or self.outgoingConnections->notEmpty())"),
         ("I3", "context FPD_Connection inv SourceTargetSameProcess: (self.source->notEmpty() and self.target->notEmpty()) implies self.source.process = self.target.process"),
