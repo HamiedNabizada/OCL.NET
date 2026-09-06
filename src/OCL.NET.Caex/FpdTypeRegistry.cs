@@ -50,11 +50,13 @@ public sealed class FpdTypeRegistry : ICaexTypeRegistry
         ["FPD_TechnicalResource"] = "FPD_Object",
         ["FPD_SystemLimit"] = "FPD_Object",
         ["FPD_Process"] = null,
-        // Connections
+        // Connections. Parallel/Alternative flows are SPECIALIZED flows — they
+        // must satisfy every context FPD_Flow rule (C2/C3/C6…) and count as
+        // PO I/O in G1. Only Usage stays a plain connection.
         ["FPD_Connection"] = null,
         ["FPD_Flow"] = "FPD_Connection",
-        ["FPD_ParallelFlow"] = "FPD_Connection",
-        ["FPD_AlternativeFlow"] = "FPD_Connection",
+        ["FPD_ParallelFlow"] = "FPD_Flow",
+        ["FPD_AlternativeFlow"] = "FPD_Flow",
         ["FPD_Usage"] = "FPD_Connection",
         // Interface classes (flow direction markers)
         ["FPD_FlowOut"] = null,
