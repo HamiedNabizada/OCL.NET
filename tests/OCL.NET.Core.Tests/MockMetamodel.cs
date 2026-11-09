@@ -83,6 +83,8 @@ internal sealed class MockMetamodel : IOclModel
 
     public bool IsTypeOf(object element, string typeName) => ((MockElement)element).Type == typeName;
 
+    public bool KnowsType(string typeName) => _parent.ContainsKey(typeName);
+
     public string TypeOf(object element) => ((MockElement)element).Type;
 
     public OclValue GetProperty(object element, string propertyName) =>

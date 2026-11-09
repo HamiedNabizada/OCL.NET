@@ -138,6 +138,42 @@ public class CaexValidationTests
         // therefore no longer collide. The positive D1 case is covered by
         // OclEngine/SideBySide duplicate-ident tests.
         Assert.DoesNotContain(findings, f => f.RuleId == "UniqueIdentifiers");
+        // G2 iterates over type literals (Sequence{FPD_Product, …}->select(t | self.oclIsKindOf(t))):
+        // every state in test.aml has a concrete type, so the rule must stay silent.
+        Assert.DoesNotContain(findings, f => f.RuleId == "StateHasConcreteType");
+    }
+
+    [Fact]
+    public void State_without_concrete_type_violates_StateHasConcreteType()
+    {
+        var rule = LoadRules("vdi3682-pure-rules.ocl").Single(r => r.Id == "StateHasConcreteType");
+        var state = Child(Process("Step"), "IntermediateProduct");
+        state.RefBaseSystemUnitPath = FpdTypeRegistry.SystemUnitClassLib + "/FPD_State"; // abstract, no concrete subtype
+
+        var findings = new OclValidator().Validate(new CaexMetamodel(_doc), new[] { rule });
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(state.ID, finding.TargetId);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Reference_into_another_instance_hierarchy_resolves_by_id(bool targetExists)
+    {
+        // F3: a refBaseObj may point into a non-FPD hierarchy (e.g. a plant structure)
+        // whose elements carry only a CAEX ID, no FPD identification.
+        var rule = LoadRules("vdi3682-pure-rules.ocl").Single(r => r.Id == "AllReferencesResolvable");
+        var plantHierarchy = _doc.CAEXFile.InstanceHierarchy.Append("IH_Plant");
+        var plant = plantHierarchy.InternalElement.Append("Plant");
+        plant.ID = "{9D2B6D6C-2F4B-4C57-9E43-6B2A1D9E0F11}";
+        var po = Child(Process("TestProcess"), "Step");
+        po.Attribute.Append("refBaseObj").Value = targetExists ? plant.ID : "{00000000-0000-0000-0000-00000000DEAD}";
+
+        var findings = new OclValidator().Validate(new CaexMetamodel(_doc), new[] { rule });
+
+        if (targetExists) Assert.Empty(findings);
+        else Assert.Equal(po.ID, Assert.Single(findings).TargetId);
     }
 
     // ---- silent-pass killers --------------------------------------------------------

@@ -144,7 +144,7 @@ public class ParserTests
         ("E5", "context FPD_Characteristic::DescriptiveElement inv ValidityLimitsConsistent: self.validityLimits->notEmpty() implies self.validityLimits.lowerLimit <= self.validityLimits.upperLimit"),
         ("F1", "context FPD_Object inv RefObjResolvable: self.refObj->notEmpty() implies self.project.containedElement->exists(e | e.identification.uniqueIdent = self.refObj)"),
         ("F2", "context FPD_ProcessOperator inv RefProcessResolvable: self.refProcess->notEmpty() implies self.project.process->exists(p | p.id = self.refProcess)"),
-        ("F3", "context FPD_Object inv AllReferencesResolvable: Sequence{self.refObj, self.refBaseObj, self.refExtendedObj, self.refComposedObj}->select(r | r->notEmpty())->forAll(r | self.project.containedElement->exists(e | e.identification.uniqueIdent = r))"),
+        ("F3", "context FPD_Object inv AllReferencesResolvable: Sequence{self.refObj, self.refBaseObj, self.refAspectObj, self.refDetailObj, self.refAbstractObj}->select(r | r->notEmpty())->forAll(r | self.project.containedElement->exists(e | e.identification.uniqueIdent = r or e.id = r))"),
         ("G1", "context FPD_ProcessOperator inv ProcessOperatorHasIO: self.incomingConnections->select(c | c.oclIsKindOf(FPD_Flow))->size() >= 1 and self.outgoingConnections->select(c | c.oclIsKindOf(FPD_Flow))->size() >= 1"),
         ("G2", "context FPD_State inv StateHasConcreteType: Sequence{FPD_Product, FPD_Energy, FPD_Information}->select(t | self.oclIsKindOf(t))->size() = 1"),
         ("G3", "context FPD_Connection inv NoSelfReference: (self.source->notEmpty() and self.target->notEmpty()) implies self.source <> self.target"),

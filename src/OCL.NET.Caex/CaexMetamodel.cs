@@ -80,6 +80,8 @@ public sealed class CaexMetamodel : IOclModel
         _ => Unwrap(element) is { } o && _types.IsTypeOf(o, typeName),
     };
 
+    public bool KnowsType(string typeName) => _types.KnowsType(typeName);
+
     public string TypeOf(object element) => element switch
     {
         CaexProjectRef => _types.ProjectTypeName,

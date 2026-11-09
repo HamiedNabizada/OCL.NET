@@ -31,6 +31,15 @@ public interface IOclMetamodel
     string TypeOf(object element);
 
     /// <summary>
+    /// Whether <paramref name="typeName"/> names a type of this metamodel. Lets the
+    /// interpreter evaluate a bare type name as a type value (e.g. the elements of
+    /// <c>Sequence{FPD_Product, FPD_Energy}</c>, later passed to <c>oclIsKindOf(t)</c>
+    /// through an iterator variable). The default knows no types, which keeps the
+    /// previous behaviour for bindings that do not implement it.
+    /// </summary>
+    bool KnowsType(string typeName) => false;
+
+    /// <summary>
     /// <c>element.propertyName</c> — navigate a property. Returns <see cref="OclValue.Void"/>
     /// for an absent single-valued property, an empty collection for an absent
     /// multi-valued one, never a CLR null.

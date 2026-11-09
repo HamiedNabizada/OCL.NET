@@ -90,6 +90,48 @@ public class InterpreterModelTests
         Assert.True(Eval("self.a.oclType() = self.b.oclType()", self).AsBool());
     }
 
+    // ---- type literals as values (rule G2 shape) -----------------------------------
+
+    [Theory]
+    [InlineData("FPD_Product", true)]
+    [InlineData("FPD_Energy", true)]
+    [InlineData("FPD_Information", true)]
+    [InlineData("FPD_State", false)] // abstract state without a concrete subtype
+    public void StateHasConcreteType_iterates_over_type_literals(string type, bool expected)
+    {
+        // G2: the type argument of oclIsKindOf comes from the iterator variable `t`,
+        // bound to type literals held in a collection — not from a literal argument.
+        const string g2 = "Sequence{FPD_Product, FPD_Energy, FPD_Information}->select(t | self.oclIsKindOf(t))->size() = 1";
+        Assert.Equal(expected, Eval(g2, new MockElement(type)).AsBool());
+    }
+
+    [Fact]
+    public void Type_operations_accept_a_bound_type_variable()
+    {
+        var self = new MockElement("FPD_Product");
+        Assert.True(Eval("let t = FPD_State in self.oclIsKindOf(t)", self).AsBool());
+        Assert.False(Eval("let t = FPD_State in self.oclIsTypeOf(t)", self).AsBool());
+        Assert.True(Eval("Sequence{FPD_Product}->forAll(t | self.oclIsTypeOf(t))", self).AsBool());
+        Assert.False(Eval("Sequence{FPD_Energy}->exists(t | self.oclIsKindOf(t))", self).AsBool());
+    }
+
+    [Fact]
+    public void Bound_variable_that_is_not_a_type_does_not_match()
+    {
+        // A variable bound to a non-type value must not be read as its own name
+        // (the old behaviour tested against a type literally called "n").
+        var result = Eval("let n = 1 in self.oclIsKindOf(n)", new MockElement("FPD_Product"));
+        Assert.False(result.Kind == OclKind.Boolean && result.AsBool());
+    }
+
+    [Fact]
+    public void Implicit_self_property_takes_precedence_over_a_type_name()
+    {
+        // A defined property of self keeps shadowing a type of the same name.
+        var self = new MockElement("X").With("FPD_Product", OclValue.Str("attribute value"));
+        Assert.Equal("attribute value", Eval("FPD_Product", self).AsString());
+    }
+
     // ---- select / size (rule A2 shape) ---------------------------------------------
 
     [Fact]
@@ -181,19 +223,27 @@ public class InterpreterModelTests
     [Fact]
     public void AllReferencesResolvable_checks_every_non_empty_reference()
     {
-        // F3: each non-empty ref in the Sequence must resolve.
-        var project = new MockElement("Project").With("containedElement", Coll(WithUniqueIdent("A"), WithUniqueIdent("B")));
-        const string f3 = "Sequence{self.refObj, self.refBaseObj, self.refExtendedObj, self.refComposedObj}" +
+        // F3: each non-empty ref in the Sequence must resolve — against an FPD
+        // uniqueIdent or, as an IDREF, against the id of any element (e.g. a plant
+        // element outside the FPD hierarchy that carries no identification).
+        var plant = new MockElement("Plant").With("id", OclValue.Str("{P1}"));
+        var project = new MockElement("Project").With("containedElement", Coll(WithUniqueIdent("A"), WithUniqueIdent("B"), plant));
+        const string f3 = "Sequence{self.refObj, self.refBaseObj, self.refAspectObj, self.refDetailObj, self.refAbstractObj}" +
                           "->select(r | r->notEmpty())" +
-                          "->forAll(r | self.project.containedElement->exists(e | e.identification.uniqueIdent = r))";
+                          "->forAll(r | self.project.containedElement->exists(e | e.identification.uniqueIdent = r or e.id = r))";
 
         var ok = new MockElement("FPD_Object")
             .With("refObj", OclValue.Str("A")).With("refBaseObj", OclValue.Str("B"))
-            .With("project", project.AsValue()); // refExtendedObj / refComposedObj absent → filtered out
+            .With("project", project.AsValue()); // refAspectObj / refDetailObj / refAbstractObj absent → filtered out
         Assert.True(Eval(f3, ok).AsBool());
 
+        var byId = new MockElement("FPD_Object")
+            .With("refBaseObj", OclValue.Str("{P1}"))
+            .With("project", project.AsValue());
+        Assert.True(Eval(f3, byId).AsBool());
+
         var bad = new MockElement("FPD_Object")
-            .With("refObj", OclValue.Str("A")).With("refComposedObj", OclValue.Str("GHOST"))
+            .With("refObj", OclValue.Str("A")).With("refAbstractObj", OclValue.Str("GHOST"))
             .With("project", project.AsValue());
         Assert.False(Eval(f3, bad).AsBool());
     }

@@ -89,9 +89,12 @@ public sealed partial class OclInterpreter
     }
 
     /// <summary>
-    /// The type operations read their argument as a type *name*, not a value:
-    /// <c>oclIsKindOf(State)</c> never evaluates <c>State</c>. <c>oclType()</c>
-    /// is represented as the type-name string so that
+    /// The type operations read a bare name argument as a type *name*:
+    /// <c>oclIsKindOf(State)</c> never evaluates <c>State</c>. A name bound to a
+    /// variable (an iterator or let variable such as <c>t</c> in
+    /// <c>Sequence{FPD_Product}-&gt;select(t | self.oclIsKindOf(t))</c>) and any other
+    /// argument expression are evaluated instead, and must yield a type value. Types
+    /// are represented as their type-name string, like <c>oclType()</c>, so that
     /// <c>a.oclType() = b.oclType()</c> comparisons work.
     /// </summary>
     private OclValue EvaluateTypeOperation(OperationCallExpr expr, EvaluationEnvironment env)
@@ -103,13 +106,31 @@ public sealed partial class OclInterpreter
         if (expr.Name == "oclType")
             return OclValue.Str(env.Metamodel.TypeOf(element));
 
-        if (expr.Arguments.FirstOrDefault() is not VariableExpr typeRef)
+        if (expr.Arguments.FirstOrDefault() is not { } typeArgument)
             throw new NotSupportedException($"{expr.Name} expects a type-name argument.");
 
+        var typeName = TypeArgumentName(typeArgument, env);
+        if (typeName is null) return OclValue.Invalid;
+
         var isKind = expr.Name == "oclIsKindOf"
-            ? env.Metamodel.IsKindOf(element, typeRef.Name)
-            : env.Metamodel.IsTypeOf(element, typeRef.Name);
+            ? env.Metamodel.IsKindOf(element, typeName)
+            : env.Metamodel.IsTypeOf(element, typeName);
         return OclValue.Bool(isKind);
+    }
+
+    /// <summary>
+    /// The type name a type operation tests against: an unbound bare name is the type
+    /// literal itself (unchanged, also for names the metamodel does not know);
+    /// otherwise the argument is evaluated and must yield a type value (a type-name
+    /// string). Anything else is no type, so the test is undefined (null).
+    /// </summary>
+    private string? TypeArgumentName(OclExpression argument, EvaluationEnvironment env)
+    {
+        if (argument is VariableExpr name && !env.TryResolve(name.Name, out _))
+            return name.Name;
+
+        var value = Evaluate(argument, env);
+        return value.Kind == OclKind.String ? value.AsString() : null;
     }
 
     private OclValue EvaluateLet(LetExpr expr, EvaluationEnvironment env)

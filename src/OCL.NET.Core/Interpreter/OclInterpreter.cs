@@ -34,14 +34,24 @@ public sealed partial class OclInterpreter
     /// <summary>
     /// Resolve a name: a bound variable first, otherwise OCL's implicit-self rule —
     /// an unqualified name in a constraint body is a property of <c>self</c>
-    /// (so <c>source</c> in <c>context Flow</c> means <c>self.source</c>).
+    /// (so <c>source</c> in <c>context Flow</c> means <c>self.source</c>). Only if
+    /// that yields nothing and the metamodel knows the name as a type is it a type
+    /// literal, represented like <c>oclType()</c> as the type-name string (so
+    /// <c>Sequence{FPD_Product}-&gt;select(t | self.oclIsKindOf(t))</c> works).
     /// </summary>
     private static OclValue EvaluateVariable(VariableExpr expr, EvaluationEnvironment env)
     {
         if (env.TryResolve(expr.Name, out var value)) return value;
-        if (env.Metamodel is not null && env.TryResolve("self", out var self) && self.Kind == OclKind.Object)
-            return env.Metamodel.GetProperty(self.AsObject(), expr.Name);
-        return OclValue.Invalid;
+        var metamodel = env.Metamodel;
+        if (metamodel is null) return OclValue.Invalid;
+
+        var property = OclValue.Invalid;
+        if (env.TryResolve("self", out var self) && self.Kind == OclKind.Object)
+        {
+            property = metamodel.GetProperty(self.AsObject(), expr.Name);
+            if (property.IsDefined) return property;
+        }
+        return metamodel.KnowsType(expr.Name) ? OclValue.Str(expr.Name) : property;
     }
 
     private OclValue EvaluateUnary(UnaryExpr expr, EvaluationEnvironment env)
