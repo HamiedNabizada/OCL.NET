@@ -105,6 +105,34 @@ public class InterpreterModelTests
         Assert.Equal(expected, Eval(g2, new MockElement(type)).AsBool());
     }
 
+    [Theory]
+    [InlineData("self.oclIsKindOf(FPD_Prodcut)")]
+    [InlineData("self.oclIsTypeOf(FPD_Prodcut)")]
+    [InlineData("let t = 'FPD_Prodcut' in self.oclIsKindOf(t)")]
+    [InlineData("Sequence{FPD_Prodcut}->exists(t | self.oclIsKindOf(t))")]
+    public void A_misspelt_type_is_undefined_when_the_metamodel_lists_all_its_types(string ocl)
+    {
+        // Fail loud: a typo in a rule must not quietly test false.
+        var expr = _parser.ParseExpression(ocl);
+        var env = new EvaluationEnvironment(MockMetamodel.Fpd().DeclaringAllTypes()).Bind("self", new MockElement("FPD_Product").AsValue());
+        Assert.Equal(OclKind.Invalid, _interp.Evaluate(expr, env).Kind);
+    }
+
+    [Fact]
+    public void A_known_type_still_tests_when_the_metamodel_lists_all_its_types()
+    {
+        var expr = _parser.ParseExpression("self.oclIsKindOf(FPD_State) and not self.oclIsTypeOf(FPD_Energy)");
+        var env = new EvaluationEnvironment(MockMetamodel.Fpd().DeclaringAllTypes()).Bind("self", new MockElement("FPD_Product").AsValue());
+        Assert.True(_interp.Evaluate(expr, env).AsBool());
+    }
+
+    [Fact]
+    public void Without_a_list_of_its_types_an_unknown_type_name_stays_false()
+    {
+        // Bindings that do not declare their types keep the previous behaviour.
+        Assert.False(Eval("self.oclIsKindOf(FPD_Prodcut)", new MockElement("FPD_Product")).AsBool());
+    }
+
     [Fact]
     public void Type_operations_accept_a_bound_type_variable()
     {

@@ -111,6 +111,8 @@ public sealed partial class OclInterpreter
 
         var typeName = TypeArgumentName(typeArgument, env);
         if (typeName is null) return OclValue.Invalid;
+        // a type the metamodel does not have (a typo in a rule) is no quiet false
+        if (env.Metamodel.DeclaresAllTypes && !env.Metamodel.KnowsType(typeName)) return OclValue.Invalid;
 
         var isKind = expr.Name == "oclIsKindOf"
             ? env.Metamodel.IsKindOf(element, typeName)

@@ -39,6 +39,17 @@ internal sealed class MockMetamodel : IOclModel
 
     public MockMetamodel(Dictionary<string, string?> parent) => _parent = parent;
 
+    private bool _declaresAllTypes;
+
+    /// <summary>Declare that <see cref="KnowsType"/> lists every type (as the CAEX binding does).</summary>
+    public MockMetamodel DeclaringAllTypes()
+    {
+        _declaresAllTypes = true;
+        return this;
+    }
+
+    public bool DeclaresAllTypes => _declaresAllTypes;
+
     /// <summary>Register elements that <see cref="InstancesOf"/> can enumerate (for validator tests).</summary>
     public MockMetamodel WithInstances(params MockElement[] elements)
     {

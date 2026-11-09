@@ -40,6 +40,14 @@ public interface IOclMetamodel
     bool KnowsType(string typeName) => false;
 
     /// <summary>
+    /// Whether <see cref="KnowsType"/> lists every type of this metamodel. Then a type
+    /// operation with a name it does not know (a misspelt type in a rule) is undefined
+    /// (invalid) instead of quietly false, so the rule fails loud. The default keeps
+    /// the previous behaviour for bindings without such a list.
+    /// </summary>
+    bool DeclaresAllTypes => false;
+
+    /// <summary>
     /// <c>element.propertyName</c> — navigate a property. Returns <see cref="OclValue.Void"/>
     /// for an absent single-valued property, an empty collection for an absent
     /// multi-valued one, never a CLR null.

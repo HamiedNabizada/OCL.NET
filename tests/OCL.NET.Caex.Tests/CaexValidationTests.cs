@@ -144,6 +144,17 @@ public class CaexValidationTests
     }
 
     [Fact]
+    public void A_rule_with_a_misspelt_type_fails_loud_instead_of_passing()
+    {
+        // "not oclIsKindOf(<typo>)" used to be true for every state: a silent pass
+        var rule = new OclRuleSpec("Typo", ValidationSeverity.Error, "test", "context FPD_State inv Typo: not self.oclIsKindOf(FPD_Prodcut)");
+
+        var findings = new OclValidator().Validate(new CaexMetamodel(_doc), new[] { rule });
+
+        Assert.NotEmpty(findings);
+    }
+
+    [Fact]
     public void State_without_concrete_type_violates_StateHasConcreteType()
     {
         var rule = LoadRules("vdi3682-pure-rules.ocl").Single(r => r.Id == "StateHasConcreteType");

@@ -72,7 +72,8 @@ in `OCL.NET.Caex`. A different binding (EMF, POCOs, a graph DB, …) is a new
 
 ## Supported OCL subset
 
-Type operations (`oclIsKindOf`/`oclIsTypeOf`/`oclType`), collection operations
+Type operations (`oclIsKindOf`/`oclIsTypeOf`/`oclType`, also with a type held in a variable, as in
+`Sequence{T1, T2}->select(t | x.oclIsKindOf(t))`), collection operations
 (`size`/`isEmpty`/`notEmpty`/`first`/`last`/`includes`/`excludes`/`asSet`/`asSequence`),
 iterators (`select`/`reject`/`collect`/`forAll`/`exists` incl. multi-variable, plus
 `closure`/`closureDepth`), boolean logic with three-valued semantics, comparison and
@@ -88,7 +89,8 @@ tuples, and `oclAsType`. The subset grows demand-driven rather than speculativel
 A validator's worst failure mode is a silent pass. The engine therefore treats an
 unknown context type as a diagnostic finding (never a silent skip), and a binding can
 surface model elements it could not classify rather than leaving them invisible to
-every rule. The CAEX binding implements both, and exposes unclassified elements via
+every rule. A binding that lists all its types (`DeclaresAllTypes`) turns a misspelt type in a
+type operation into `invalid` instead of a quiet `false`. The CAEX binding implements both, and exposes unclassified elements via
 `CaexMetamodel.UnclassifiedElements()`.
 
 ## CAEX binding

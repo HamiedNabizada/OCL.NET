@@ -82,6 +82,9 @@ public sealed class CaexMetamodel : IOclModel
 
     public bool KnowsType(string typeName) => _types.KnowsType(typeName);
 
+    /// <summary>The type registry lists every type, so a misspelt type in a rule fails loud.</summary>
+    public bool DeclaresAllTypes => true;
+
     public string TypeOf(object element) => element switch
     {
         CaexProjectRef => _types.ProjectTypeName,
